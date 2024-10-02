@@ -2,7 +2,7 @@ package com.xiangli.server.server.work;
 
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
-import com.xiangli.server.manager.ServiceManager;
+import com.xiangli.server.provider.ServiceProvider;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -21,11 +21,11 @@ import java.net.Socket;
 // 工作线程，用于处理客户端的请求
 public class WorkThread implements Runnable {
     private final Socket socket;
-    private final ServiceManager serviceManager;
+    private final ServiceProvider serviceProvider;
 
-    public WorkThread(Socket socket, ServiceManager serviceManager) {
+    public WorkThread(Socket socket, ServiceProvider serviceProvider) {
         this.socket = socket;
-        this.serviceManager = serviceManager;
+        this.serviceProvider = serviceProvider;
     }
 
     @Override
@@ -55,8 +55,8 @@ public class WorkThread implements Runnable {
     private RpcResponse handleRequest(RpcRequest rpcRequest) {
         // 获取服务名（接口名）
         String interfaceName = rpcRequest.getInterfaceName();
-        // 从 ServiceManager 中获取对应的服务实例
-        Object service = serviceManager.getService(interfaceName);
+        // 从 ServiceProvider 中获取对应的服务实例
+        Object service = serviceProvider.getService(interfaceName);
 
         if (service == null) {
             return RpcResponse.fail("未找到对应的服务：" + interfaceName);

@@ -7,7 +7,7 @@ package com.xiangli.server.server.impl;
  */
 
 import com.xiangli.server.RpcServer;
-import com.xiangli.server.manager.ServiceManager;
+import com.xiangli.server.provider.ServiceProvider;
 import com.xiangli.server.server.work.WorkThread;
 
 import java.io.IOException;
@@ -20,10 +20,10 @@ import java.net.Socket;
  * @create 2024/09/30 12:00
  */
 public class SimpleRpcServer implements RpcServer {
-    private final ServiceManager serviceManager;
+    private final ServiceProvider serviceManager;
 
     // 构造函数，接收服务管理器
-    public SimpleRpcServer(ServiceManager serviceManager) {
+    public SimpleRpcServer(ServiceProvider serviceManager) {
         this.serviceManager = serviceManager;
     }
 

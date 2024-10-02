@@ -9,20 +9,16 @@ package com.xiangli.client.proxy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
-import com.xiangli.client.IoCClient;
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
-
+import com.xiangli.client.rpcclient.impl.NettyRpcClient;
 
 public class ClientProxy implements InvocationHandler {
 
-    private String host; // IP地址
-    private int port; // 端口
+    private final NettyRpcClient rpcClient;
 
     public ClientProxy(String host, int port) {
-        this.host = host;
-        this.port = port;
+        this.rpcClient = new NettyRpcClient(host, port);
     }
 
     // 动态代理，每次代理对象调用方法时，都会经过此方法
@@ -36,8 +32,8 @@ public class ClientProxy implements InvocationHandler {
                 method.getParameterTypes()              // 参数类型
         );
 
-        // 通过 IoCClient 发送请求，接收响应
-        RpcResponse response = IoCClient.sendRequest(host, port, request);
+        // 通过 NettyRpcClient 发送请求，接收响应
+        RpcResponse response = rpcClient.sendRequest(request);
 
         // 返回响应中的数据
         return response != null ? response.getData() : null;
@@ -52,4 +48,3 @@ public class ClientProxy implements InvocationHandler {
         );
     }
 }
-

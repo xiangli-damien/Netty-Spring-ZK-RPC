@@ -56,5 +56,22 @@
             <version>2.0.0</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Spring 相关依赖 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>5.2.12.RELEASE</version> <!-- 稳定的 Spring 5.x 版本，适配 JDK 8 -->
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>5.2.12.RELEASE</version> <!-- 与 Spring 上下文保持一致 -->
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <version>5.2.12.RELEASE</version> <!-- 需要的 Spring AOP 版本 -->
+        </dependency>
     </dependencies>
 </project>
