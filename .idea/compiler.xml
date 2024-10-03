@@ -7,8 +7,14 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="netty-zk-rpc" />
+        <module name="rpc-server" />
+        <module name="rpc-client" />
+        <module name="rpc-common" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="rpc-common (1)" target="1.8" />
+      <module name="rpc-common (2)" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

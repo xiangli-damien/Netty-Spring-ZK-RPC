@@ -1,0 +1,7 @@
+com/xiangli/common/message/RpcRequest.class
+com/xiangli/common/annotation/Remote.class
+com/xiangli/common/annotation/RemoteInvoke.class
+com/xiangli/common/message/RpcResponse.class
+com/xiangli/common/service/UserService.class
+com/xiangli/common/service/UserServiceImpl.class
+com/xiangli/common/pojo/User.class
