@@ -15,7 +15,7 @@ public class NettyServerTest {
         // 创建服务提供者，并注册服务
         ServiceProvider serviceProvider = new ServiceProvider();
         UserService userService = new UserServiceImpl();
-        serviceProvider.registerServiceInterface(userService);
+        serviceProvider.registerService(userService);
 
         // 启动 Netty 服务端
         NettyRpcServer server = new NettyRpcServer(serviceProvider);

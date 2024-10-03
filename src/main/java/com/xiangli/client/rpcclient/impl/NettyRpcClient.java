@@ -17,11 +17,16 @@ import io.netty.util.AttributeKey;
 import com.xiangli.client.netty.initializer.NettyClientInitializer;
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 /**
  * Netty客户端，用于发送RPC请求并接收响应
  */
+@Slf4j
 public class NettyRpcClient implements RpcClient {
+
 
     private String host;
     private int port;
@@ -49,11 +54,13 @@ public class NettyRpcClient implements RpcClient {
     public RpcResponse sendRequest(RpcRequest request) {
         try {
             // 建立与服务端的连接
+            log.info("Client: connecting to server " + host + ":" + port);
             ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
             Channel channel = channelFuture.channel();
 
             // 发送RPC请求
             channel.writeAndFlush(request);
+            log.info("Client: send request: " + request);
 
             //sync()阻塞获取结果
             channel.closeFuture().sync();
@@ -61,7 +68,7 @@ public class NettyRpcClient implements RpcClient {
             // 等待并接收响应
             AttributeKey<RpcResponse> key = AttributeKey.valueOf("RPCResponse");
             RpcResponse response = channel.attr(key).get();
-            System.out.println("RPCClient: Client received response: " + response);
+            log.info("Client: receive response: " + response);
 
             // 关闭连接
             channel.closeFuture().sync();

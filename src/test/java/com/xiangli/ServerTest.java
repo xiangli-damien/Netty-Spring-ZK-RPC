@@ -16,7 +16,7 @@ public class ServerTest {
         ServiceProvider serviceProvider = new ServiceProvider();
 
         // 注册服务实现类
-        serviceProvider.registerServiceInterface(new UserServiceImpl());
+        serviceProvider.registerService(new UserServiceImpl());
 
         // 启动服务器
         RpcServer server = new SimpleRpcServer(serviceProvider);  // 你也可以使用 ThreadPoolRpcServer

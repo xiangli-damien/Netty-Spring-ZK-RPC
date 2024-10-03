@@ -1,6 +1,9 @@
 package com.xiangli.common.service;
 
+import com.xiangli.common.annotation.Remote;
 import com.xiangli.common.pojo.User;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.util.Random;
 import java.util.UUID;
@@ -11,10 +14,14 @@ import java.util.UUID;
  * @create 2024/09/30 11:01
  */
 
+@Remote
+@Slf4j
+@Service
 public class UserServiceImpl implements UserService {
+
     @Override
     public User getUserByUserId(Integer id) {
-        System.out.println("客户端查询了"+id+"的用户");
+        log.info("Client: calling getUserByUserId with id = " + id);
         // 模拟从数据库中取用户的行为
         Random random = new Random();
         User user = new User();
@@ -26,7 +33,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Integer insertUserId(User user) {
-        System.out.println("插入数据成功: " + user.getUserName());
+        log.info("Client: calling insertUserId with user = " + user);
         return user.getId();
     }
 }

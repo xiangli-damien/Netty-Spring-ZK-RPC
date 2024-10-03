@@ -6,6 +6,7 @@ import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
 import com.xiangli.server.provider.ServiceProvider;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -21,7 +22,7 @@ import java.lang.reflect.Method;
     * 从request中读取数据，调用服务端相应服务
  */
 
-
+@Slf4j
 @AllArgsConstructor
 public class NettyRpcServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
     private ServiceProvider serviceProvider;
@@ -29,7 +30,7 @@ public class NettyRpcServerHandler extends SimpleChannelInboundHandler<RpcReques
     protected void channelRead0(ChannelHandlerContext ctx, RpcRequest request) throws Exception {
         //接收request，读取并调用服务
         RpcResponse response = getResponse(request);
-        System.out.println("服务端发送消息："+response);
+        log.info("Server: send response to client");
         ctx.writeAndFlush(response);
         ctx.close();
     }
@@ -45,13 +46,16 @@ public class NettyRpcServerHandler extends SimpleChannelInboundHandler<RpcReques
         Object service = serviceProvider.getService(interfaceName);
         //反射调用方法
         Method method=null;
+        log.info("Server: get response from service");
         try {
+            log.info("Server: get method using reflection");
             method = service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getParamsType());
+            log.info("Server: invoke method");
             Object invoke = method.invoke(service,rpcRequest.getParams());
             return RpcResponse.success(invoke);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
-            System.out.println("方法执行错误");
+            log.error("method execution error");
             return RpcResponse.fail();
         }
     }
