@@ -11,6 +11,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+
 /**
  * @author lixiang
  * @version 1.0
@@ -18,12 +21,29 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-@AllArgsConstructor
 public class NettyRpcServer implements RpcServer {
     private ServiceProvider serviceProvider;
 
+    private volatile boolean isRunning = false;
+
+    public NettyRpcServer(ServiceProvider serviceProvider) {
+        this.serviceProvider = serviceProvider;
+    }
+
     @Override
     public void start(int port) {
+        if (isRunning) {
+            log.warn("Server is already running on port " + port);
+            return;
+        }
+
+        // 检查端口是否已经被占用
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            serverSocket.close();  // 检查完毕后立即关闭，以便 Netty 使用该端口
+        } catch (IOException e) {
+            log.warn("Port " + port + " is already in use", e);
+            return;
+        }
         new Thread(() -> {
             log.info("Server: Initializing Netty server, building bossGroup and workGroup...");
             // netty 服务线程组boss负责建立连接， work负责具体的请求
@@ -45,6 +65,8 @@ public class NettyRpcServer implements RpcServer {
                 log.info("Server: Netty server started successfully, block listening on port " + port);
                 ChannelFuture channelFuture=serverBootstrap.bind(port).sync();
 
+                isRunning = true;
+
                 //死循环监听
                 channelFuture.channel().closeFuture().sync();
             }catch (InterruptedException e){
@@ -52,6 +74,7 @@ public class NettyRpcServer implements RpcServer {
             }finally {
                 bossGroup.shutdownGracefully();
                 workGroup.shutdownGracefully();
+                isRunning = false;
             }
         }).start();
 
@@ -60,5 +83,10 @@ public class NettyRpcServer implements RpcServer {
     @Override
     public void stop() {
         System.out.println("Netty 服务器正在关闭...");
+        isRunning = false;
+    }
+
+    public boolean isRunning() {
+        return isRunning;
     }
 }

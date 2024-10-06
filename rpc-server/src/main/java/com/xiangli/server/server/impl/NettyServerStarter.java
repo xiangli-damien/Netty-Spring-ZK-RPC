@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
-
+// 继承 ApplicationListener 接口，监听 Spring 容器加载完毕的事件
 @Component
 @Slf4j
 public class NettyServerStarter implements ApplicationListener<ContextRefreshedEvent> {
@@ -23,8 +23,12 @@ public class NettyServerStarter implements ApplicationListener<ContextRefreshedE
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         // 在 Spring 容器加载完毕后，启动 Netty 服务器
-        log.info("Server: Starting Netty server");
-        nettyRpcServer.start(8080);  // 启动 Netty 服务器，监听 8080 端口
-        log.info("Server: Netty server listening on port 8080");
+        if (!nettyRpcServer.isRunning()) {
+            log.info("Server: Starting Netty server");
+            nettyRpcServer.start(8181);  // 启动 Netty 服务器，监听 8181 端口
+            log.info("Server: Netty server listening on port 8181");
+        } else {
+            log.warn("Netty server is already running");
+        }
     }
 }

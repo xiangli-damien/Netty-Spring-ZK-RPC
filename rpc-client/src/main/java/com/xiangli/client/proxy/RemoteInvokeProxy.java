@@ -80,6 +80,6 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
     // 发送RPC请求的方法，这里可以调用Netty客户端
     private RpcResponse sendRpcRequest(RpcRequest request) {
         // 实现Netty客户端发送请求并返回响应
-        return new NettyRpcClient("localhost", 8080).sendRequest(request);
+        return new NettyRpcClient("localhost", 8181).sendRequest(request);
     }
 }

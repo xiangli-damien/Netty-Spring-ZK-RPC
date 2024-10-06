@@ -1,9 +1,12 @@
 package com.xiangli.client;
 
 import com.xiangli.client.controller.UserController;
+import com.xiangli.client.servicecenter.ZKServiceCenter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+import java.net.InetSocketAddress;
 
 /**
  * @author lixiang
@@ -21,6 +24,12 @@ public class RpcClientApplication {
         *
          */
         ApplicationContext context = new AnnotationConfigApplicationContext("com.xiangli.client");
+
+        // 获取 ZKServiceCenter 实例，用于服务发现
+        ZKServiceCenter serviceCenter = context.getBean(ZKServiceCenter.class);
+        // 发现服务的地址
+        InetSocketAddress serviceAddress = serviceCenter.serviceDiscovery("com.xiangli.server.serviceimpl.UserServiceImpl");
+
 
         // 获取 UserController 的 Bean
         UserController userController = context.getBean(UserController.class);
