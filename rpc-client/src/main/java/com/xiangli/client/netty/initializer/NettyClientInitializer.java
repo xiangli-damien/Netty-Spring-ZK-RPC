@@ -1,5 +1,9 @@
 package com.xiangli.client.netty.initializer;
 
+import com.xiangli.common.serializer.myCode.MyDecoder;
+import com.xiangli.common.serializer.myCode.MyEncoder;
+import com.xiangli.common.serializer.mySerializer.JsonSerializer;
+import com.xiangli.common.serializer.mySerializer.ProtostuffSerializer;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -45,21 +49,15 @@ public class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new LengthFieldPrepender(4));
 
         /*
-            * OutboundHandler ： ObjectEncoder 是一个消息编码器，它可以将对象序列化为字节数组
+            * OutboundHandler ： MyEncoder 是一个消息编码器，它可以将对象序列化为字节数组,使用自定义的编码器
          */
-        pipeline.addLast(new ObjectEncoder());
+        pipeline.addLast(new MyEncoder(new ProtostuffSerializer()));
 
 
         /*
-            * InboundHandler ： ObjectDecoder 是一个消息解码器，它可以将字节数组反序列化为对象
-            * @param resolver 用于解析类名并加载相应的类
+            * InboundHandler ： MyDecoder 是一个消息解码器，它可以将字节数组反序列化为对象,使用自定义的解码器
          */
-        pipeline.addLast(new ObjectDecoder(new ClassResolver() {
-            @Override
-            public Class<?> resolve(String className) throws ClassNotFoundException {
-                return Class.forName(className);
-            }
-        }));
+        pipeline.addLast(new MyDecoder());
 
         /*
             * InboundHandler ： NettyClientHandler 是一个自定义的消息处理器，用于处理服务端返回的消息

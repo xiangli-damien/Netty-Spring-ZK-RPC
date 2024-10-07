@@ -1,5 +1,9 @@
 package com.xiangli.server.initializer;
 
+import com.xiangli.common.serializer.myCode.MyDecoder;
+import com.xiangli.common.serializer.myCode.MyEncoder;
+import com.xiangli.common.serializer.mySerializer.JsonSerializer;
+import com.xiangli.common.serializer.mySerializer.ProtostuffSerializer;
 import com.xiangli.server.handler.NettyRpcServerHandler;
 import com.xiangli.server.provider.ServiceProvider;
 import io.netty.channel.ChannelInitializer;
@@ -29,16 +33,11 @@ public class NettyServerInitializer extends ChannelInitializer<SocketChannel> {
         //计算当前待发送消息的长度，写入到前4个字节中
         pipeline.addLast(new LengthFieldPrepender(4));
 
-        //使用Java序列化方式，netty的自带的解码编码支持传输这种结构
-        pipeline.addLast(new ObjectEncoder());
-        //使用了Netty中的ObjectDecoder，它用于将字节流解码为 Java 对象。
-        //在ObjectDecoder的构造函数中传入了一个ClassResolver 对象，用于解析类名并加载相应的类。
-        pipeline.addLast(new ObjectDecoder(new ClassResolver() {
-            @Override
-            public Class<?> resolve(String className) throws ClassNotFoundException {
-                return Class.forName(className);
-            }
-        }));
+        //使用自定义的编/解码器
+        pipeline.addLast(new MyEncoder(new ProtostuffSerializer()));
+
+        //使用了自定义的解码器
+        pipeline.addLast(new MyDecoder());
 
         pipeline.addLast(new NettyRpcServerHandler(serviceManager));
     }

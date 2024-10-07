@@ -2,6 +2,7 @@ package com.xiangli.client;
 
 import com.xiangli.client.controller.UserController;
 import com.xiangli.client.servicecenter.ZKServiceCenter;
+import com.xiangli.common.pojo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -37,5 +38,7 @@ public class RpcClientApplication {
         // 测试调用远程服务
         log.info("Client: calling getUserByUserId with id = 1");
         System.out.println(userController.getUserByUserId(1));
+
+        System.out.println(userController.insertUserId(new User(2, "test", true)));
     }
 }

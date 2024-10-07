@@ -2,7 +2,6 @@ com/xiangli/server/handler/NettyRpcServerHandler.class
 com/xiangli/server/provider/ServiceProvider.class
 com/xiangli/server/server/impl/ThreadPoolRpcServer.class
 com/xiangli/server/server/impl/NettyRpcServer.class
-com/xiangli/server/initializer/NettyServerInitializer$1.class
 com/xiangli/server/server/impl/NettyServerStarter.class
 com/xiangli/server/initializer/NettyServerInitializer.class
 com/xiangli/server/serviceregister/ServiceRegister.class
