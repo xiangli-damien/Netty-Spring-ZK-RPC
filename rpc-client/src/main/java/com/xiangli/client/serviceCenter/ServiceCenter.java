@@ -1,4 +1,4 @@
-package com.xiangli.client.servicecenter;
+package com.xiangli.client.serviceCenter;
 
 import java.net.InetSocketAddress;
 

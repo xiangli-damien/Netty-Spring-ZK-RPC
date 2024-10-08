@@ -1,5 +1,8 @@
-package com.xiangli.client.servicecenter;
+package com.xiangli.client.serviceCenter;
 
+import com.xiangli.client.cache.serviceCache;
+import com.xiangli.client.serviceCenter.ZKWatcher.watchZK;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -16,9 +19,12 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@Data
 public class ZKServiceCenter implements ServiceCenter{
 
     private CuratorFramework client;
+
+    private serviceCache cache;
 
     private static final String ROOT_PATH = "MyRPC";
 
@@ -33,16 +39,45 @@ public class ZKServiceCenter implements ServiceCenter{
 
         this.client.start();
         log.info("zookeeper connection successful");
+        // 初始化本地缓存
+        cache = new serviceCache();
+        log.info("Local cache initialized");
+        // 初始化watcher
+        watchZK watchZK = new watchZK(client, cache);
+        try {
+            watchZK.watchToUpdate(ROOT_PATH);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            log.error("Failed to start the watch service");
+        }
+
+        // 主动加载当前已有的服务到缓存
+        try {
+            List<String> services = client.getChildren().forPath("/");
+            for (String serviceName : services) {
+                List<String> addresses = client.getChildren().forPath("/" + serviceName);
+                for (String address : addresses) {
+                    cache.addServiceToCache(serviceName, address);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to initialize cache with existing services", e);
+        }
+
     }
 
     @Override
     public InetSocketAddress serviceDiscovery(String serviceName) {
+        String address = null;
         try {
             // get all the children nodes of the service name(list of host:port)
-            List<String> addresses = client.getChildren().forPath("/" + serviceName);
-            // return the first one
-            // Introducing the load balancing in the future.
-            String address = addresses.get(0);
+            List<String> cacheServiceList = cache.getServcieFromCache(serviceName);
+            if (cacheServiceList == null) {
+                List<String> addresses = client.getChildren().forPath("/" + serviceName);
+                address = addresses.get(0);
+            } else {
+                address = cacheServiceList.get(0);
+            }
             return parseAddress(address);
         } catch (Exception e) {
             e.printStackTrace();

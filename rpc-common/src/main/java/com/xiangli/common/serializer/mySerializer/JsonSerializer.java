@@ -2,7 +2,6 @@ package com.xiangli.common.serializer.mySerializer;
 
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
-import com.xiangli.common.pojo.User;
 import lombok.extern.slf4j.Slf4j;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
