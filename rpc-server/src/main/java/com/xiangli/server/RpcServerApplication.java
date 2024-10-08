@@ -27,8 +27,8 @@ public class RpcServerApplication {
 //            log.info("初始化 Bean: " + beanName + " 类型: " + context.getBean(beanName).getClass().getName());
 //        }
         // 从 Spring 容器中获取 ZKServiceRegister 实例
-        ZKServiceRegister zkServiceRegister = context.getBean(ZKServiceRegister.class);
-        zkServiceRegister.register("com.xiangli.server.serviceimpl.UserServiceImpl", new InetSocketAddress("localhost", 8181));
+//        ZKServiceRegister zkServiceRegister = context.getBean(ZKServiceRegister.class);
+//        zkServiceRegister.register("com.xiangli.server.serviceimpl.UserServiceImpl", new InetSocketAddress("localhost", 8181));
 
         // 优雅关闭 Spring 容器
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

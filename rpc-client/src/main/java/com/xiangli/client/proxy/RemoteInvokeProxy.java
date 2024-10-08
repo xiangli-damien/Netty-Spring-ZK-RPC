@@ -1,11 +1,13 @@
 package com.xiangli.client.proxy;
 
+import com.xiangli.client.serviceCenter.ServiceCenter;
 import com.xiangli.common.annotation.RemoteInvoke;
 import com.xiangli.client.rpcclient.impl.NettyRpcClient;
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 
 /**
  * @author lixiang
@@ -23,6 +26,9 @@ import java.lang.reflect.Method;
 @Component
 @Slf4j
 public class RemoteInvokeProxy implements BeanPostProcessor {
+
+    @Autowired
+    private ServiceCenter serviceCenter;
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -73,13 +79,26 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        // 后置处理器的这个方法可以直接返回bean即可
         return bean;
     }
 
-    // 发送RPC请求的方法，这里可以调用Netty客户端
+    // 发送RPC请求的方法，动态获取服务地址
     private RpcResponse sendRpcRequest(RpcRequest request) {
-        // 实现Netty客户端发送请求并返回响应
-        return new NettyRpcClient("localhost", 8181).sendRequest(request);
+        String serviceName = request.getInterfaceName();  // 获取接口名
+
+        // 从服务中心获取服务地址
+        InetSocketAddress serviceAddress = serviceCenter.serviceDiscovery(serviceName);
+
+        if (serviceAddress != null) {
+            String host = serviceAddress.getHostName();
+            int port = serviceAddress.getPort();
+            log.info("Client: connecting to server " + host + ":" + port);
+
+            // 使用Netty客户端发送RPC请求
+            return new NettyRpcClient(host, port).sendRequest(request);
+        } else {
+            log.error("No available service found for " + serviceName);
+            return null;
+        }
     }
 }

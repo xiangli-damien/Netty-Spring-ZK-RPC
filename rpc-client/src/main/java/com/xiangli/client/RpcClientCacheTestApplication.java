@@ -1,7 +1,7 @@
 package com.xiangli.client;
 
 import com.xiangli.client.controller.UserController;
-import com.xiangli.client.serviceCenter.ZKServiceCenter;
+import com.xiangli.client.serviceCenter.impl.ZKServiceCenter;
 import com.xiangli.common.pojo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;

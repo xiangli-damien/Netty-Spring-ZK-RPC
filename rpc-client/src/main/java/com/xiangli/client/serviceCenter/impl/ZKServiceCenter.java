@@ -1,7 +1,9 @@
-package com.xiangli.client.serviceCenter;
+package com.xiangli.client.serviceCenter.impl;
 
 import com.xiangli.client.cache.serviceCache;
+import com.xiangli.client.serviceCenter.ServiceCenter;
 import com.xiangli.client.serviceCenter.ZKWatcher.watchZK;
+import com.xiangli.client.serviceCenter.balance.impl.ConsistentHashBalance;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
@@ -20,7 +22,7 @@ import java.util.List;
 @Slf4j
 @Component
 @Data
-public class ZKServiceCenter implements ServiceCenter{
+public class ZKServiceCenter implements ServiceCenter {
 
     private CuratorFramework client;
 
@@ -68,16 +70,23 @@ public class ZKServiceCenter implements ServiceCenter{
 
     @Override
     public InetSocketAddress serviceDiscovery(String serviceName) {
-        String address = null;
+
         try {
-            // get all the children nodes of the service name(list of host:port)
-            List<String> cacheServiceList = cache.getServcieFromCache(serviceName);
-            if (cacheServiceList == null) {
-                List<String> addresses = client.getChildren().forPath("/" + serviceName);
-                address = addresses.get(0);
-            } else {
-                address = cacheServiceList.get(0);
+            // get all the children nodes of the service name(list of host:port) from cache
+            List<String> addressList = cache.getServcieFromCache(serviceName);
+            log.info("Service discovery from cache: [{}]", addressList);
+            // if the cache is empty, get the children nodes from zookeeper
+            if (addressList == null) {
+                addressList = client.getChildren().forPath("/" + serviceName);
+                log.info("Service discovery from zookeeper: [{}]", addressList);
             }
+
+            if (addressList == null || addressList.isEmpty()) {
+                log.error("No addresses found for service: {}", serviceName);
+                return null;
+            }
+            String address = new ConsistentHashBalance().balance(addressList);
+            log.info("Service discovery successful: [{}]", address);
             return parseAddress(address);
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,13 +1,15 @@
 package com.xiangli.client;
 
+import com.xiangli.client.cache.serviceCache;
 import com.xiangli.client.controller.UserController;
-import com.xiangli.client.serviceCenter.ZKServiceCenter;
+import com.xiangli.client.serviceCenter.impl.ZKServiceCenter;
 import com.xiangli.common.pojo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * @author lixiang
@@ -28,17 +30,32 @@ public class RpcClientApplication {
 
         // 获取 ZKServiceCenter 实例，用于服务发现
         ZKServiceCenter serviceCenter = context.getBean(ZKServiceCenter.class);
-        // 发现服务的地址
-        InetSocketAddress serviceAddress = serviceCenter.serviceDiscovery("com.xiangli.server.serviceimpl.UserServiceImpl");
+
+        serviceCache cache = serviceCenter.getCache();
+
+        // 从缓存中获取服务地址
+        List<String> cachedAddresses = cache.getServcieFromCache("com.xiangli.server.serviceimpl.UserServiceImpl");
+
+        // 验证缓存中是否添加了服务地址
+        if (cachedAddresses != null && !cachedAddresses.isEmpty()) {
+            log.info("Service successfully added to cache: {}", cachedAddresses);
+        } else {
+            log.error("Service was not added to the cache!");
+        }
 
 
         // 获取 UserController 的 Bean
         UserController userController = context.getBean(UserController.class);
 
-        // 测试调用远程服务
-        log.info("Client: calling getUserByUserId with id = 1");
-        System.out.println(userController.getUserByUserId(1));
+        for (int i = 0; i < 5; i++) {
+            // 调用 UserController 的方法，自动通过 RemoteInvokeProxy 进行服务发现和 RPC 调用
+            log.info("Client: calling getUserByUserId with id = {}", i);
+            System.out.println(userController.getUserByUserId(i));
 
-        System.out.println(userController.insertUserId(new User(2, "test", true)));
+            User user = new User(i, "User" + i, i % 2 == 0);
+            System.out.println(userController.insertUserId(user));
+
+        }
+
     }
 }

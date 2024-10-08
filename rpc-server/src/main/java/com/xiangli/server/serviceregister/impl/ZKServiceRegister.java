@@ -64,22 +64,21 @@ public class ZKServiceRegister implements ServiceRegister {
             // path address, one / represents one node
             // / + serviceName + / + serviceAddress(hostName:port)
             String path = "/" + serviceName + "/" + getServiceAddress(serviceAddress);
-            // check if already create root path for the service, if not, create it
-            // withMode(persistent): create a persistent node for serviceName
-            // when the service provider is offline, only the address is deleted, not the service name
-            if (client.checkExists().forPath(path) == null) {
-                if (client.checkExists().forPath("/" + serviceName) == null) {
-                    client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath("/" + serviceName);
-                }
-
-                client.create().withMode(CreateMode.EPHEMERAL).forPath(path);
-            } else {
-                log.warn("Node already exists for service: " + serviceName + " at " + getServiceAddress(serviceAddress));
+            log.info("Registering service [{}] at [{}]", serviceName, serviceAddress);
+            if (client.checkExists().forPath("/" + serviceName) == null) {
+                client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath("/" + serviceName);
             }
-            log.info("Service: [{}] register success", serviceName);
+            // 检查IP地址和端口号节点是否存在，如果不存在则创建（临时节点）
+            if (client.checkExists().forPath(path) == null) {
+                client.create().withMode(CreateMode.EPHEMERAL).forPath(path);
+                log.info("Service [{}] registered successfully at [{}]", serviceName, serviceAddress);
+
+            } else {
+                log.warn("Service [{}] already registered at [{}]", serviceName, serviceAddress);
+            }
         } catch (Exception e) {
-            log.error("register service fail");
             e.printStackTrace();
+            log.error("Failed to register service [{}] at [{}]", serviceName, serviceAddress, e);
         }
     }
 
