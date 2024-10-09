@@ -10,4 +10,6 @@ import java.net.InetSocketAddress;
 public interface ServiceCenter {
 
     InetSocketAddress serviceDiscovery(String serviceName);
+
+    boolean checkMethodRetry(String serviceName, String methodName);
 }

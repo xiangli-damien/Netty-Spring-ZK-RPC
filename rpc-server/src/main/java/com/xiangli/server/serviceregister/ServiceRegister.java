@@ -15,5 +15,5 @@ public interface ServiceRegister {
     * @return: void
     * @function: register service with service name and address
      */
-    void register(String serviceName, InetSocketAddress serviceAddress);
+    void register(String serviceName, InetSocketAddress serviceAddress, Object instance);
 }

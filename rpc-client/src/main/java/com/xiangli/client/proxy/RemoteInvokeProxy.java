@@ -1,5 +1,9 @@
 package com.xiangli.client.proxy;
 
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.xiangli.client.serviceCenter.ServiceCenter;
 import com.xiangli.common.annotation.RemoteInvoke;
 import com.xiangli.client.rpcclient.impl.NettyRpcClient;
@@ -17,6 +21,8 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author lixiang
@@ -49,20 +55,42 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
                     @Override
                     public Object intercept(Object o, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
                         log.info("Client: calling method " + method.getName() + " of " + field.getType().getName());
-                        // 在这里，我们将通过 Netty 客户端发送 RPC 请求
-                        RpcRequest request = new RpcRequest(
-                                method.getDeclaringClass().getName(),  // 接口类名
-                                method.getName(),                      // 方法名
-                                args,                                  // 参数
-                                method.getParameterTypes()              // 参数类型
-                        );
-                        log.info("Client: sending RPC request " + request);
-                        // 调用 Netty 客户端发送请求
-                        RpcResponse response = sendRpcRequest(request);
-                        log.info("Client: received RPC response " + response);
 
-                        // 返回服务器的响应结果
-                        return response != null ? response.getData() : null;
+                        RpcRequest request = new RpcRequest(
+                                method.getDeclaringClass().getName(),
+                                method.getName(),
+                                args,
+                                method.getParameterTypes()
+                        );
+
+                        String serviceName = request.getInterfaceName();
+                        String methodName = request.getMethodName();
+
+                        // 细化到方法级别的幂等性校验
+                        if (serviceCenter.checkMethodRetry(serviceName, methodName)) {
+                            log.info("Method " + methodName + " of service " + serviceName + " is idempotent, will retry if needed.");
+
+                            Retryer<RpcResponse> retryer = RetryerBuilder.<RpcResponse>newBuilder()
+                                    .retryIfException()
+                                    .retryIfResult(response -> Objects.equals(response.getCode(), 500))
+                                    .withWaitStrategy(WaitStrategies.fixedWait(2, TimeUnit.SECONDS))
+                                    .withStopStrategy(StopStrategies.stopAfterAttempt(3))
+                                    .build();
+
+                            try {
+                                RpcResponse response = retryer.call(() -> sendRpcRequest(request));
+                                log.info("Client: received RPC response after retry " + response);
+                                return response != null ? response.getData() : null;
+                            } catch (Exception e) {
+                                log.error("RPC request failed after retries", e);
+                                return null;
+                            }
+                        } else {
+                            log.info("Method " + methodName + " of service " + serviceName + " is not idempotent. Sending request without retry.");
+                            RpcResponse response = sendRpcRequest(request);
+                            log.info("Client: received RPC response " + response);
+                            return response != null ? response.getData() : null;
+                        }
                     }
                 });
 

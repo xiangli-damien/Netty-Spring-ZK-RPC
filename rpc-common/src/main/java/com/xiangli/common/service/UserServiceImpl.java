@@ -1,5 +1,6 @@
 package com.xiangli.common.service;
 
+import com.xiangli.common.annotation.Idempotent;
 import com.xiangli.common.annotation.Remote;
 import com.xiangli.common.pojo.User;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import java.util.UUID;
 @Service
 public class UserServiceImpl implements UserService {
 
+    @Idempotent
     @Override
     public User getUserByUserId(Integer id) {
         log.info("Client: calling getUserByUserId with id = " + id);

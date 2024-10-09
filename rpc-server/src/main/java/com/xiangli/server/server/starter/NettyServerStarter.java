@@ -5,6 +5,7 @@ package com.xiangli.server.server.starter;
  * @version 1.0
  * @create 2024/10/02 20:55
  */
+import com.xiangli.common.service.UserServiceImpl;
 import com.xiangli.server.server.impl.NettyRpcServer;
 import com.xiangli.server.server.portUtil.PortUtil;
 import com.xiangli.server.serviceregister.impl.ZKServiceRegister;
@@ -23,9 +24,12 @@ public class NettyServerStarter implements ApplicationListener<ContextRefreshedE
     private final NettyRpcServer nettyRpcServer;
     private final ZKServiceRegister zkServiceRegister;
 
-    public NettyServerStarter(NettyRpcServer nettyRpcServer , ZKServiceRegister zkServiceRegister) {
+    private final UserServiceImpl userService;
+
+    public NettyServerStarter(NettyRpcServer nettyRpcServer , ZKServiceRegister zkServiceRegister, UserServiceImpl userService) {
         this.nettyRpcServer = nettyRpcServer;
         this.zkServiceRegister = zkServiceRegister;
+        this.userService = userService;
     }
 
     @Override
@@ -37,7 +41,7 @@ public class NettyServerStarter implements ApplicationListener<ContextRefreshedE
                 log.info("Server: Starting Netty server on port " + port);
                 nettyRpcServer.start(port);  // 启动 Netty 服务器，监听指定端口
                 log.info("Server: Netty server listening on port " + port);
-                zkServiceRegister.register("com.xiangli.common.service.UserService", new InetSocketAddress("localhost", port));
+                zkServiceRegister.register("com.xiangli.common.service.UserService", new InetSocketAddress("localhost", port), userService);
             } else {
                 log.warn("Netty server is already running");
             }

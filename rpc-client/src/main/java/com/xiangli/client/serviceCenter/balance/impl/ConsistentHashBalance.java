@@ -27,12 +27,12 @@ public class ConsistentHashBalance implements LoadBalance {
     private  void init(List<String> serviceList) {
         for (String server :serviceList) {
             realNodes.add(server);
-            log.info("Real node[" + server + "] added");
+            //log.info("Real node[" + server + "] added");
             for (int i = 0; i < VIRTUAL_NUM; i++) {
                 String virtualNode = server + "&&VN" + i;
                 int hash = getHash(virtualNode);
                 shards.put(hash, virtualNode);
-                log.info("Virtual node[" + virtualNode + "] hash:" + hash + "，added");
+                //log.info("Virtual node[" + virtualNode + "] hash:" + hash + "，added");
             }
         }
     }
@@ -64,12 +64,12 @@ public class ConsistentHashBalance implements LoadBalance {
     public  void addNode(String node) {
         if (!realNodes.contains(node)) {
             realNodes.add(node);
-            log.info("Real node[" + node + "] added");
+            //log.info("Real node[" + node + "] added");
             for (int i = 0; i < VIRTUAL_NUM; i++) {
                 String virtualNode = node + "&&VN" + i;
                 int hash = getHash(virtualNode);
                 shards.put(hash, virtualNode);
-                log.info("Virtual node[" + virtualNode + "] hash:" + hash + "，added");
+                //log.info("Virtual node[" + virtualNode + "] hash:" + hash + "，added");
             }
         }
     }
@@ -82,12 +82,12 @@ public class ConsistentHashBalance implements LoadBalance {
     public  void delNode(String node) {
         if (realNodes.contains(node)) {
             realNodes.remove(node);
-            log.info("Real node[" + node + "] removed");
+            //log.info("Real node[" + node + "] removed");
             for (int i = 0; i < VIRTUAL_NUM; i++) {
                 String virtualNode = node + "&&VN" + i;
                 int hash = getHash(virtualNode);
                 shards.remove(hash);
-                log.info("Virtual node[" + virtualNode + "] hash:" + hash + "，removed");
+                //log.info("Virtual node[" + virtualNode + "] hash:" + hash + "，removed");
             }
         }
     }

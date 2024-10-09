@@ -5,6 +5,7 @@ package com.xiangli.server.serviceregister.impl;
  * @version 1.0
  * @create 2024/10/03 15:01
  */
+import com.xiangli.common.annotation.Idempotent;
 import com.xiangli.server.serviceregister.ServiceRegister;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
@@ -14,7 +15,10 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+
+import static org.apache.curator.SessionFailRetryLoop.Mode.RETRY;
 
 @Slf4j
 @Component
@@ -24,6 +28,8 @@ public class ZKServiceRegister implements ServiceRegister {
 
     // root path of zookeeper
     private static final String ROOT_PATH = "MyRPC";
+
+    private static final String IDEMPOTENT_ROOT_PATH = "/idempotent";
 
     // initialize zookeeper client and connect to zookeeper server
     public ZKServiceRegister() {
@@ -59,22 +65,37 @@ public class ZKServiceRegister implements ServiceRegister {
     * @function: register service with service name and address
      */
     @Override
-    public void register(String serviceName, InetSocketAddress serviceAddress) {
+    public void register(String serviceName, InetSocketAddress serviceAddress, Object serviceInstance) {
         try {
-            // path address, one / represents one node
-            // / + serviceName + / + serviceAddress(hostName:port)
+            // generate the path of the service (/serviceName/serviceAddress)
             String path = "/" + serviceName + "/" + getServiceAddress(serviceAddress);
             log.info("Registering service [{}] at [{}]", serviceName, serviceAddress);
+
+            // check if the service name node exists, if not, create it as a persistent node only with the service name
             if (client.checkExists().forPath("/" + serviceName) == null) {
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath("/" + serviceName);
             }
-            // 检查IP地址和端口号节点是否存在，如果不存在则创建（临时节点）
+
+            // create an ephemeral node with the service address(IP:port)
             if (client.checkExists().forPath(path) == null) {
                 client.create().withMode(CreateMode.EPHEMERAL).forPath(path);
                 log.info("Service [{}] registered successfully at [{}]", serviceName, serviceAddress);
-
             } else {
                 log.warn("Service [{}] already registered at [{}]", serviceName, serviceAddress);
+            }
+
+            // 检查并注册幂等方法
+            Method[] methods = serviceInstance.getClass().getDeclaredMethods();
+            log.info("Checking for idempotent methods in service [{}]", serviceName);
+            for (Method method : methods) {
+                if (method.isAnnotationPresent(Idempotent.class)) {
+                    String methodName = method.getName();
+                    String idempotentPath = IDEMPOTENT_ROOT_PATH + "/" + serviceName + "/" + methodName;
+                    if (client.checkExists().forPath(idempotentPath) == null) {
+                        client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(idempotentPath);
+                        log.info("Method [{}] in service [{}] is idempotent", methodName, serviceName);
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

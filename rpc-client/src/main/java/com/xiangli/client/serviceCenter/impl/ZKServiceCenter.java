@@ -30,6 +30,8 @@ public class ZKServiceCenter implements ServiceCenter {
 
     private static final String ROOT_PATH = "MyRPC";
 
+    private static final String IDEMPOTENT_ROOT_PATH = "/idempotent";
+
     public ZKServiceCenter(){
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
         this.client = CuratorFrameworkFactory.builder()
@@ -93,6 +95,23 @@ public class ZKServiceCenter implements ServiceCenter {
             log.error("Service discovery failed");
         }
         return null;
+    }
+
+    @Override
+    public boolean checkMethodRetry(String serviceName, String methodName) {
+        boolean canRetry = false;
+        try {
+            // 检查服务名下的幂等方法
+            String path = IDEMPOTENT_ROOT_PATH + "/" + serviceName + "/" + methodName;
+            if (client.checkExists().forPath(path) != null) {
+                log.info("Method " + methodName + " of service " + serviceName + " is idempotent.");
+                canRetry = true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Failed to check method retry for service: " + serviceName + " and method: " + methodName);
+        }
+        return canRetry;
     }
 
     private InetSocketAddress parseAddress(String address) {
