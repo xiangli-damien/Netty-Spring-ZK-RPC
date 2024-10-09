@@ -1,6 +1,9 @@
 package com.xiangli.server.provider;
 
+import com.xiangli.server.ratelimit.RateLimit;
+import com.xiangli.server.ratelimit.provider.RateLimitProvider;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -21,6 +24,9 @@ public class ServiceProvider {
 
     // 存储接口名和服务实例的映射关系
     private final Map<String, Object> serviceMap = new HashMap<>();
+
+    @Autowired
+    private RateLimitProvider rateLimitProvider;
 
     /**
      * 注册服务到服务提供者中。
@@ -51,6 +57,14 @@ public class ServiceProvider {
      * @return 服务实例对象，如果未找到则返回 null。
      */
     public Object getService(String interfaceName) {
-        return serviceMap.get(interfaceName);
+        RateLimit rareLimit = rateLimitProvider.getRateLimit(interfaceName);
+        if (rareLimit.getToken()){
+            log.info("Server: service " + interfaceName + " is available");
+            return serviceMap.get(interfaceName);
+        } else {
+            log.warn("Server: The service " + interfaceName + " is limited by rate limit");
+            throw new RuntimeException("The service is limited by rate limit");
+        }
+
     }
 }

@@ -4,6 +4,7 @@ import com.github.rholder.retry.*;
 import com.xiangli.client.rpcclient.RpcClient;
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  * @create 2024/10/08 20:53
  */
+@Slf4j
 public class guavaRetry {
     private RpcClient rpcClient;
     public RpcResponse sendServiceWithRetry(RpcRequest request, RpcClient rpcClient) {
@@ -29,7 +31,7 @@ public class guavaRetry {
                 .withRetryListener(new RetryListener() {
                     @Override
                     public <V> void onRetry(Attempt<V> attempt) {
-                        System.out.println("RetryListener: 第" + attempt.getAttemptNumber() + "次调用");
+                        log.info("retrying..."+attempt.getAttemptNumber());
                     }
                 })
                 .build();

@@ -56,7 +56,7 @@ public class serviceCache {
             addressList.remove(oldAddress);
             addressList.add(newAddress);
         }else {
-            System.out.println("修改失败，服务不存在");
+            log.info("Service does not exist");
         }
     }
 

@@ -87,12 +87,14 @@ public class ZKServiceRegister implements ServiceRegister {
             // 检查并注册幂等方法
             Method[] methods = serviceInstance.getClass().getDeclaredMethods();
             log.info("Checking for idempotent methods in service [{}]", serviceName);
+            log.info("methods: {}", methods);
             for (Method method : methods) {
                 if (method.isAnnotationPresent(Idempotent.class)) {
                     String methodName = method.getName();
                     String idempotentPath = IDEMPOTENT_ROOT_PATH + "/" + serviceName + "/" + methodName;
+                    log.info("Registering idempotent path [{}]", idempotentPath);
                     if (client.checkExists().forPath(idempotentPath) == null) {
-                        client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(idempotentPath);
+                        client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(idempotentPath);
                         log.info("Method [{}] in service [{}] is idempotent", methodName, serviceName);
                     }
                 }
