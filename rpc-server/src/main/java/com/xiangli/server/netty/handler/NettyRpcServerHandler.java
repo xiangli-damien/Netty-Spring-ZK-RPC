@@ -30,6 +30,7 @@ public class NettyRpcServerHandler extends SimpleChannelInboundHandler<Object> {
     private ServiceProvider serviceProvider;
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+        log.info("Server: Channel {}", ctx.channel().id());
         log.info("Server: received message from client" + msg);
         // 判断消息类型
         if (msg instanceof RpcRequest) {
