@@ -1,10 +1,12 @@
-package com.xiangli.server.handler;
+package com.xiangli.server.netty.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
 import com.xiangli.server.provider.ServiceProvider;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,21 +26,32 @@ import java.lang.reflect.Method;
 
 @Slf4j
 @AllArgsConstructor
-public class NettyRpcServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
+public class NettyRpcServerHandler extends SimpleChannelInboundHandler<Object> {
     private ServiceProvider serviceProvider;
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, RpcRequest request) throws Exception {
-        //接收request，读取并调用服务
-        RpcResponse response = getResponse(request);
-        log.info("Server: send response to client");
-        ctx.writeAndFlush(response);
-        ctx.close();
+    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+        log.info("Server: received message from client" + msg);
+        // 判断消息类型
+        if (msg instanceof RpcRequest) {
+            RpcRequest request = (RpcRequest) msg;
+            // 正常RPC请求处理
+            RpcResponse response = getResponse(request);
+            log.info("Server: send response to client");
+            ctx.writeAndFlush(response);
+        } else if ("PING".equals(msg)) {
+            // 处理心跳请求
+            log.info("Server: received heartbeat (PING), sending PONG");
+            ctx.writeAndFlush("PONG");
+        } else {
+            log.warn("Unknown message type received: " + msg);
+        }
     }
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
         ctx.close();
     }
+
     private RpcResponse getResponse(RpcRequest rpcRequest){
         //得到服务名
         String interfaceName=rpcRequest.getInterfaceName();
@@ -59,5 +72,19 @@ public class NettyRpcServerHandler extends SimpleChannelInboundHandler<RpcReques
             return RpcResponse.fail();
         }
     }
+
+//    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        log.info("Server: user idle event triggered");
+        if (evt instanceof IdleStateEvent) {
+            IdleStateEvent idleEvent = (IdleStateEvent) evt;
+            if (idleEvent.state() == IdleState.READER_IDLE) {
+                log.warn("Server: no read for 10 seconds, closing connection");
+                ctx.close();
+            }
+        }
+        super.userEventTriggered(ctx, evt);
+    }
+
 }
 

@@ -1,20 +1,19 @@
-package com.xiangli.server.initializer;
+package com.xiangli.server.netty.initializer;
 
 import com.xiangli.common.serializer.myCode.MyDecoder;
 import com.xiangli.common.serializer.myCode.MyEncoder;
-import com.xiangli.common.serializer.mySerializer.JsonSerializer;
 import com.xiangli.common.serializer.mySerializer.ProtostuffSerializer;
-import com.xiangli.server.handler.NettyRpcServerHandler;
+import com.xiangli.server.netty.handler.NettyRpcServerHandler;
 import com.xiangli.server.provider.ServiceProvider;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.serialization.ClassResolver;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.AllArgsConstructor;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author lixiang
@@ -38,6 +37,15 @@ public class NettyServerInitializer extends ChannelInitializer<SocketChannel> {
 
         //使用了自定义的解码器
         pipeline.addLast(new MyDecoder());
+
+        /*
+            * IdleStateHandler 是netty提供的处理空闲状态的处理器，
+            * @param readerIdleTime 读空闲时间
+            * @param writerIdleTime 写空闲时间
+            * @param allIdleTime    读写空闲时间
+            * @param unit           时间单位
+         */
+        pipeline.addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS));
 
         pipeline.addLast(new NettyRpcServerHandler(serviceManager));
     }

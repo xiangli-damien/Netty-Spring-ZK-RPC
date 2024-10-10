@@ -24,21 +24,43 @@ public class MyEncoder extends MessageToByteEncoder {
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
         log.info("start encoding message : " + msg.getClass());
         //1.写入消息类型
-        if(msg instanceof RpcRequest){
+        if (msg instanceof RpcRequest) {
+            log.info("Encoded RpcRequest" + msg);
             out.writeShort(MessageType.REQUEST.getCode());
-        }
-        else if(msg instanceof RpcResponse){
+            encodeMessage(out, msg);
+        } else if (msg instanceof RpcResponse) {
             out.writeShort(MessageType.RESPONSE.getCode());
+            log.info("Encoded RpcResponse" + msg);
+            encodeMessage(out, msg);
+        } else if ("PING".equals(msg)) {
+            log.info("Encoded PING");
+            out.writeShort(MessageType.HEARTBEAT_REQUEST.getCode());  // 写入心跳请求类型
+        } else if ("PONG".equals(msg)) {
+            log.info("Encoded PONG");
+            out.writeShort(MessageType.HEARTBEAT_RESPONSE.getCode());  // 写入心跳响应类型
+        } else {
+            log.error("Unsupported message type: " + msg.getClass());
         }
-        //2.写入序列化方式
-        out.writeShort(serializer.getType());
-        //得到序列化数组
-        byte[] serializeBytes = serializer.serialize(msg);
-        //3.写入长度
-        out.writeInt(serializeBytes.length);
-        //4.写入序列化数组
-        out.writeBytes(serializeBytes);
+
     }
 
+
+    // 通用的消息编码方法，用于处理 RpcRequest 和 RpcResponse
+    private void encodeMessage(ByteBuf out, Object msg) throws Exception {
+        // 2. 写入序列化器类型
+        out.writeShort(serializer.getType());
+        log.info("Encoded serializer type: {}", serializer.getType());
+
+        // 3. 根据消息类型调用不同的序列化方法
+        byte[] serializeBytes = serializer.serialize(msg);
+        log.info("Encoded bytes: {}", serializeBytes);
+
+        // 4. 写入序列化后的数据长度
+        out.writeInt(serializeBytes.length);
+
+        // 5. 写入序列化后的数据
+        out.writeBytes(serializeBytes);
+        log.info("Encoded message: {} with length {}", msg.getClass().getSimpleName(), serializeBytes.length);
+    }
 
 }

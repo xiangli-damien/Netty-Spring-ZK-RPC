@@ -25,7 +25,7 @@ public class RateLimitProvider {
         // if the rate limit of the interface is not in the map, create a new rate limit implements and put it in the map
         if(!rateLimitMap.containsKey(interfaceName)){
             // create a new rate limit implements
-            RateLimit rateLimit=new TokenBucketRateLimitImpl(100,10);
+            RateLimit rateLimit=new TokenBucketRateLimitImpl(100,100000);
             // put the rate limit in the map
             rateLimitMap.put(interfaceName,rateLimit);
             log.info("Server: Created rate limit for interface: " + interfaceName);

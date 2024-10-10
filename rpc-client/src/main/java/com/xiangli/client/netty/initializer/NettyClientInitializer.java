@@ -13,6 +13,9 @@ import io.netty.handler.codec.serialization.ClassResolver;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import com.xiangli.client.netty.handler.NettyClientHandler;
+import io.netty.handler.timeout.IdleStateHandler;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author lixiang
@@ -58,6 +61,15 @@ public class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
             * InboundHandler ： MyDecoder 是一个消息解码器，它可以将字节数组反序列化为对象,使用自定义的解码器
          */
         pipeline.addLast(new MyDecoder());
+
+        /*
+            * InboundHandler ： IdleStateHandler 是netty提供的处理空闲状态的处理器
+            * @param readerIdleTime 读空闲时间
+            * @param writerIdleTime 写空闲时间
+            * @param allIdleTime    读写空闲时间
+            * @param unit           时间单位
+         */
+        pipeline.addLast(new IdleStateHandler(0, 120, 0, TimeUnit.SECONDS));
 
         /*
             * InboundHandler ： NettyClientHandler 是一个自定义的消息处理器，用于处理服务端返回的消息

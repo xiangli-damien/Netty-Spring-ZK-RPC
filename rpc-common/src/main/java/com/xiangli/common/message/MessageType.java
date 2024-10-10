@@ -12,7 +12,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum MessageType {
     // REQUEST(0) 语法的含义是调用了MessageType的构造函数，传入0，然后将返回值赋给REQUEST
-    REQUEST(0),RESPONSE(1);
+    REQUEST(0),
+    RESPONSE(1),
+    HEARTBEAT_REQUEST(2),
+    HEARTBEAT_RESPONSE(3);
     // code是一个私有变量，只能通过get方法获取
     private int code;
 }

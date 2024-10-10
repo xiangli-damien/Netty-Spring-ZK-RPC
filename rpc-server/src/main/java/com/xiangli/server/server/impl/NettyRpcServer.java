@@ -1,13 +1,12 @@
 package com.xiangli.server.server.impl;
 
 import com.xiangli.server.server.RpcServer;
-import com.xiangli.server.initializer.NettyServerInitializer;
+import com.xiangli.server.netty.initializer.NettyServerInitializer;
 import com.xiangli.server.provider.ServiceProvider;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
