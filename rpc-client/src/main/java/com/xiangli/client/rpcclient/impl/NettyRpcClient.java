@@ -6,93 +6,110 @@ package com.xiangli.client.rpcclient.impl;
  * @create 2024/10/01 10:09
  */
 
-import com.xiangli.client.rpcclient.RpcClient;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.AttributeKey;
+import com.xiangli.client.transport.unprocessed.UnprocessedRequests;
+import com.xiangli.client.transport.channel.ChannelProvider;
 import com.xiangli.client.netty.initializer.NettyClientInitializer;
+import com.xiangli.client.rpcclient.RpcClient;
+import com.xiangli.client.serviceCenter.ServiceCenter;
 import com.xiangli.common.message.RpcRequest;
 import com.xiangli.common.message.RpcResponse;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Netty客户端，用于发送RPC请求并接收响应
  */
 @Slf4j
+@Component
 public class NettyRpcClient implements RpcClient {
 
+    private final UnprocessedRequests unprocessedRequests;
+    private final ChannelProvider channelProvider;
 
-    private String host;
-    private int port;
+    @Autowired
+    private ServiceCenter serviceCenter;
 
     // Netty 客户端需要的Bootstrap和EventLoopGroup
-    private static final Bootstrap bootstrap;
-    private static final EventLoopGroup eventLoopGroup;
+    private final Bootstrap bootstrap;
+    private final EventLoopGroup eventLoopGroup;
 
-    // 静态块初始化Netty客户端的全局配置
-    static {
+
+    public NettyRpcClient(){
+        unprocessedRequests = new UnprocessedRequests();
+        channelProvider = new ChannelProvider();
+
         eventLoopGroup = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         bootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
-                .handler(new NettyClientInitializer());  // 初始化pipeline
-    }
-
-    // 构造函数传入host和port
-    public NettyRpcClient(String host, int port) {
-        this.host = host;
-        this.port = port;
+                .handler(new NettyClientInitializer(unprocessedRequests));  // 初始化pipeline
     }
 
     @Override
     public RpcResponse sendRequest(RpcRequest request) {
+        String serviceName = request.getInterfaceName();
+        InetSocketAddress serviceAddress = serviceCenter.serviceDiscovery(serviceName);
+        if (serviceAddress == null) {
+            log.error("无法找到可用的服务：{}", serviceName);
+            return RpcResponse.fail(request.getRequestId());
+        }
+
+        Channel channel = getChannel(serviceAddress);
+        if (channel != null && channel.isActive()) {
+            CompletableFuture<RpcResponse> resultFuture = new CompletableFuture<>();
+            unprocessedRequests.put(request.getRequestId(), resultFuture);
+            channel.writeAndFlush(request).addListener((ChannelFutureListener) future -> {
+                if (!future.isSuccess()) {
+                    resultFuture.completeExceptionally(future.cause());
+                    unprocessedRequests.remove(request.getRequestId());
+                    log.error("发送请求失败", future.cause());
+                }
+            });
+            try {
+                // 设置超时时间，例如 5 秒
+                return resultFuture.get(5, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                unprocessedRequests.remove(request.getRequestId());
+                log.error("获取响应失败", e);
+                return RpcResponse.fail(request.getRequestId());
+            }
+        } else {
+            log.error("无法获取有效的 Channel，地址：{}", serviceAddress);
+            return RpcResponse.fail(request.getRequestId());
+        }
+    }
+
+    private Channel getChannel(InetSocketAddress inetSocketAddress) {
+        Channel channel = channelProvider.get(inetSocketAddress);
+        if (channel == null) {
+            channel = connect(inetSocketAddress);
+            channelProvider.set(inetSocketAddress, channel);
+        }
+        return channel;
+    }
+
+    private Channel connect(InetSocketAddress inetSocketAddress) {
         try {
-            // 建立与服务端的连接
-            log.info("Client: connecting to server " + host + ":" + port);
-            ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
-            Channel channel = channelFuture.channel();
-
-            // 发送RPC请求
-            channel.writeAndFlush(request);
-            log.info("Client: send request: " + request);
-
-            //sync()阻塞获取结果
-            channel.closeFuture().sync();
-
-            // 等待并接收响应
-            AttributeKey<RpcResponse> key = AttributeKey.valueOf("RPCResponse");
-            RpcResponse response = channel.attr(key).get();
-            log.info("Client: receive response: " + response);
-
-            // 关闭连接
-            channel.closeFuture().sync();
-            return response;
+            ChannelFuture future = bootstrap.connect(inetSocketAddress).sync();
+            Channel channel = future.channel();
+            log.info("成功连接到服务器：{}", inetSocketAddress);
+            return channel;
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.error("连接服务器失败：{}", inetSocketAddress, e);
             return null;
         }
     }
 
-    // 异步请求的示例，便于后续扩展
-    public void sendRequestAsync(RpcRequest request) {
-        ChannelFuture channelFuture = bootstrap.connect(host, port);
-        channelFuture.addListener(future -> {
-            if (future.isSuccess()) {
-                Channel channel = ((ChannelFuture) future).channel();
-                channel.writeAndFlush(request).addListener(writeFuture -> {
-                    if (writeFuture.isSuccess()) {
-                        System.out.println("Request sent successfully");
-                    } else {
-                        System.out.println("Failed to send request");
-                    }
-                });
-            } else {
-                System.out.println("Failed to connect to server");
-            }
-        });
+    // 添加关闭方法，释放资源
+    public void close() {
+        eventLoopGroup.shutdownGracefully();
     }
 }

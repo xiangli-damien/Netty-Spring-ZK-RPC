@@ -17,6 +17,9 @@ import java.io.Serializable;
 // RPC响应, 服务端返回给客户端的响应对象
 public class RpcResponse implements Serializable {
 
+    // 消息请求ID
+    private String requestId;
+
     // 状态码 (例如: 200 表示成功，500 表示服务器错误)
     private int code;
 
@@ -34,18 +37,17 @@ public class RpcResponse implements Serializable {
 
     /**
      * 带参数的构造方法
-     *
+     * @param requestId 消息请求ID
      * @param code 状态码
      * @param message 状态信息
      * @param data 返回数据
      */
-    public RpcResponse(int code, String message, Object data, Class<?> dataType) {
+    public RpcResponse(String requestId, int code, String message, Object data, Class<?> dataType) {
+        this.requestId = requestId;
         this.code = code;
         this.message = message;
         this.data = data;
-        if (data != null) {
-            this.dataType = data.getClass();
-        }
+        this.dataType = dataType;
     }
 
 
@@ -56,8 +58,8 @@ public class RpcResponse implements Serializable {
      * @param data 请求成功时返回的数据
      * @return RpcResponse 包含状态码 200 和成功数据
      */
-    public static RpcResponse success(Object data) {
-        return new RpcResponse(200, "Success", data, data.getClass());
+    public static RpcResponse success(String requestId, Object data) {
+        return new RpcResponse(requestId, 200, "Success", data, data.getClass());
     }
 
     /**
@@ -65,8 +67,8 @@ public class RpcResponse implements Serializable {
      *
      * @return RpcResponse 包含状态码 500 和默认错误信息
      */
-    public static RpcResponse fail() {
-        return new RpcResponse(500, "Server Error", null, null);
+    public static RpcResponse fail(String requestId) {
+        return new RpcResponse(requestId, 500,"Server Error", null, null);
     }
 
     /**
@@ -75,7 +77,7 @@ public class RpcResponse implements Serializable {
      * @param errorMessage 错误信息
      * @return RpcResponse 包含状态码 500 和具体的错误信息
      */
-    public static RpcResponse fail(String errorMessage) {
-        return new RpcResponse(500, errorMessage, null, null);
+    public static RpcResponse fail(String requestId, String errorMessage) {
+        return new RpcResponse(requestId, 500,errorMessage, null, null);
     }
 }

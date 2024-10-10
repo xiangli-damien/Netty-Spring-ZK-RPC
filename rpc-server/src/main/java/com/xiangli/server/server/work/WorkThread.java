@@ -74,7 +74,7 @@ public class WorkThread implements Runnable {
             Object result = method.invoke(service, rpcRequest.getParams());
 
             // 返回成功的响应
-            return RpcResponse.success(result);
+            return RpcResponse.success(rpcRequest.getRequestId(), result);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             System.err.println("调用服务方法出错：" + e.getMessage());
             e.printStackTrace();

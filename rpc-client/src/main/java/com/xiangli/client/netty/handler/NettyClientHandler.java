@@ -5,6 +5,7 @@ package com.xiangli.client.netty.handler;
  * @version 1.0
  * @create 2024/09/30 15:03
  */
+import com.xiangli.client.transport.unprocessed.UnprocessedRequests;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
@@ -25,6 +26,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class NettyClientHandler extends SimpleChannelInboundHandler<Object> {
 
+    private final UnprocessedRequests unprocessedRequests;
+
+    public NettyClientHandler(UnprocessedRequests unprocessedRequests) {
+        this.unprocessedRequests = unprocessedRequests;
+    }
+
 
     // private ScheduledFuture<?> heartbeatTask;
 
@@ -42,19 +49,21 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<Object> {
     //客户端接收到服务端的数据后调用
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+        log.info("Client: Channel ID: {} ", ctx.channel().id());
         // 判断接收到的消息类型
         if (msg instanceof RpcResponse) {
             RpcResponse response = (RpcResponse) msg;
             // 正常的RPC响应处理
             if (response != null) {
                 log.info(String.format("Client receive message from server: %s", response));
-                AttributeKey<RpcResponse> key = AttributeKey.valueOf("RPCResponse");
-                ctx.channel().attr(key).set(response);
+//                AttributeKey<RpcResponse> key = AttributeKey.valueOf("RPCResponse");
+//                ctx.channel().attr(key).set(response);
+                unprocessedRequests.complete(response);
             } else {
                 log.error("Response is null");
             }
-            log.info("Client: rpcresponse received, closing channel");
-            ctx.channel().close(); // 关闭连接
+//            log.info("Client: rpcresponse received, closing channel");
+//            ctx.channel().close(); // 关闭连接
         } else if ("PONG".equals(msg)) {
             // 处理心跳响应
             log.info("Client: received heartbeat response (PONG)");

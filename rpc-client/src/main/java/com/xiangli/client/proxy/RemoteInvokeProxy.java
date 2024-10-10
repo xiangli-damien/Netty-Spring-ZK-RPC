@@ -4,6 +4,7 @@ import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
+import com.xiangli.client.retry.GuavaRetry;
 import com.xiangli.client.serviceCenter.ServiceCenter;
 import com.xiangli.common.annotation.RemoteInvoke;
 import com.xiangli.client.rpcclient.impl.NettyRpcClient;
@@ -36,6 +37,9 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
     @Autowired
     private ServiceCenter serviceCenter;
 
+    @Autowired
+    private NettyRpcClient rpcClient;
+
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         // 在这一步我们将会处理Bean中的每个字段，判断它们是否带有 @RemoteInvoke 注解
@@ -56,6 +60,7 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
                     public Object intercept(Object o, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
                         log.info("Client: calling method " + method.getName() + " of " + field.getType().getName());
 
+                        // 创建RPC请求对象
                         RpcRequest request = new RpcRequest(
                                 method.getDeclaringClass().getName(),
                                 method.getName(),
@@ -63,6 +68,7 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
                                 method.getParameterTypes()
                         );
 
+                        //
                         String serviceName = request.getInterfaceName();
                         String methodName = request.getMethodName();
 
@@ -70,24 +76,15 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
                         if (serviceCenter.checkMethodRetry(serviceName, methodName)) {
                             log.info("Method " + methodName + " of service " + serviceName + " is idempotent, will retry if needed.");
 
-                            Retryer<RpcResponse> retryer = RetryerBuilder.<RpcResponse>newBuilder()
-                                    .retryIfException()
-                                    .retryIfResult(response -> Objects.equals(response.getCode(), 500))
-                                    .withWaitStrategy(WaitStrategies.fixedWait(2, TimeUnit.SECONDS))
-                                    .withStopStrategy(StopStrategies.stopAfterAttempt(3))
-                                    .build();
+                            // 使用 GuavaRetry
+                            GuavaRetry guavaRetry = new GuavaRetry(rpcClient);
+                            RpcResponse response = guavaRetry.sendServiceWithRetry(request);
+                            log.info("Client: received RPC response after retry {}", response);
+                            return response != null ? response.getData() : null;
 
-                            try {
-                                RpcResponse response = retryer.call(() -> sendRpcRequest(request));
-                                log.info("Client: received RPC response after retry " + response);
-                                return response != null ? response.getData() : null;
-                            } catch (Exception e) {
-                                log.error("RPC request failed after retries", e);
-                                return null;
-                            }
                         } else {
                             log.info("Method " + methodName + " of service " + serviceName + " is not idempotent. Sending request without retry.");
-                            RpcResponse response = sendRpcRequest(request);
+                            RpcResponse response = rpcClient.sendRequest(request);
                             log.info("Client: received RPC response " + response);
                             return response != null ? response.getData() : null;
                         }
@@ -110,23 +107,23 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
         return bean;
     }
 
-    // 发送RPC请求的方法，动态获取服务地址
-    private RpcResponse sendRpcRequest(RpcRequest request) {
-        String serviceName = request.getInterfaceName();  // 获取接口名
-
-        // 从服务中心获取服务地址
-        InetSocketAddress serviceAddress = serviceCenter.serviceDiscovery(serviceName);
-
-        if (serviceAddress != null) {
-            String host = serviceAddress.getHostName();
-            int port = serviceAddress.getPort();
-            log.info("Client: connecting to server " + host + ":" + port);
-
-            // 使用Netty客户端发送RPC请求
-            return new NettyRpcClient(host, port).sendRequest(request);
-        } else {
-            log.error("No available service found for " + serviceName);
-            return null;
-        }
-    }
+//    // 发送RPC请求的方法，动态获取服务地址
+//    private RpcResponse sendRpcRequest(RpcRequest request) {
+//        String serviceName = request.getInterfaceName();  // 获取接口名
+//
+//        // 从服务中心获取服务地址
+//        InetSocketAddress serviceAddress = serviceCenter.serviceDiscovery(serviceName);
+//
+//        if (serviceAddress != null) {
+//            String host = serviceAddress.getHostName();
+//            int port = serviceAddress.getPort();
+//            log.info("Client: connecting to server " + host + ":" + port);
+//
+//            // 使用Netty客户端发送RPC请求
+//            return new NettyRpcClient(host, port).sendRequest(request);
+//        } else {
+//            log.error("No available service found for " + serviceName);
+//            return null;
+//        }
+//    }
 }

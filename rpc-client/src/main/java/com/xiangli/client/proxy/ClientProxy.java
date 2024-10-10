@@ -18,7 +18,7 @@ public class ClientProxy implements InvocationHandler {
     private final NettyRpcClient rpcClient;
 
     public ClientProxy(String host, int port) {
-        this.rpcClient = new NettyRpcClient(host, port);
+        this.rpcClient = new NettyRpcClient();
     }
 
     // 动态代理，每次代理对象调用方法时，都会经过此方法

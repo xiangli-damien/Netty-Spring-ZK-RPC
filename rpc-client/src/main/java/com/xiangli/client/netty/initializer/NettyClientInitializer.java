@@ -1,17 +1,14 @@
 package com.xiangli.client.netty.initializer;
 
+import com.xiangli.client.transport.unprocessed.UnprocessedRequests;
 import com.xiangli.common.serializer.myCode.MyDecoder;
 import com.xiangli.common.serializer.myCode.MyEncoder;
-import com.xiangli.common.serializer.mySerializer.JsonSerializer;
 import com.xiangli.common.serializer.mySerializer.ProtostuffSerializer;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.serialization.ClassResolver;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
 import com.xiangli.client.netty.handler.NettyClientHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 
@@ -29,6 +26,12 @@ public class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
         ChannelInitializer是一个Netty提供的一个抽象类，用于初始化Channel,只在Channel第一次注册到EventLoop上调用
         每个Channel都有一个ChannelPipeline，用于添加和设置ChannelHandler链
      */
+    private final UnprocessedRequests unprocessedRequests;
+
+    public NettyClientInitializer(UnprocessedRequests unprocessedRequests) {
+        this.unprocessedRequests = unprocessedRequests;
+    }
+
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
@@ -74,7 +77,7 @@ public class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
         /*
             * InboundHandler ： NettyClientHandler 是一个自定义的消息处理器，用于处理服务端返回的消息
          */
-        pipeline.addLast(new NettyClientHandler());
+        pipeline.addLast(new NettyClientHandler(unprocessedRequests));
     }
 }
 
