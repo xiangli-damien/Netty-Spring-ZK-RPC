@@ -72,7 +72,7 @@ public class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
             * @param allIdleTime    读写空闲时间
             * @param unit           时间单位
          */
-        pipeline.addLast(new IdleStateHandler(0, 120, 0, TimeUnit.SECONDS));
+        pipeline.addLast(new IdleStateHandler(0, 30, 0, TimeUnit.SECONDS));
 
         /*
             * InboundHandler ： NettyClientHandler 是一个自定义的消息处理器，用于处理服务端返回的消息

@@ -58,6 +58,7 @@ public class NettyRpcServerHandler extends SimpleChannelInboundHandler<Object> {
                     // 处理心跳请求
                     log.info("Server: received heartbeat (PING), sending PONG");
                     ctx.writeAndFlush("PONG");
+                    log.info("Server: sent heartbeat (PONG)");
                 } else {
                     log.warn("Unknown message type received: " + msg);
                 }

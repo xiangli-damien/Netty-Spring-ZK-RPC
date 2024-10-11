@@ -30,6 +30,7 @@ public class RpcRequest implements Serializable {
         this.requestId = UUID.randomUUID().toString();
     }
 
+    // this()调用无参构造函数
     public RpcRequest(String interfaceName, String methodName, Object[] params, Class<?>[] paramsType) {
         this();
         this.interfaceName = interfaceName;

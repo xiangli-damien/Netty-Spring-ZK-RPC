@@ -33,20 +33,7 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<Object> {
     }
 
 
-    // private ScheduledFuture<?> heartbeatTask;
-
-    /* 客户端连接建立后，定时发送心跳，需要时使用
-    @Override
-//    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-//        // 客户端连接建立后，定时发送心跳
-//        heartbeatTask = ctx.executor().scheduleAtFixedRate(() -> {
-//            log.info("Client: sending heartbeat (PING)");
-//            ctx.writeAndFlush("PING");
-//        }, 0, 5, TimeUnit.SECONDS); // 每隔5秒发送一次心跳
-//    }
-     */
-
-    //客户端接收到服务端的数据后调用
+    // 客户端接收到服务端的数据后调用
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         log.info("Client: Channel ID: {} ", ctx.channel().id());
@@ -56,17 +43,13 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<Object> {
             // 正常的RPC响应处理
             if (response != null) {
                 log.info(String.format("Client receive message from server: %s", response));
-//                AttributeKey<RpcResponse> key = AttributeKey.valueOf("RPCResponse");
-//                ctx.channel().attr(key).set(response);
                 unprocessedRequests.complete(response);
             } else {
                 log.error("Response is null");
             }
-//            log.info("Client: rpcresponse received, closing channel");
-//            ctx.channel().close(); // 关闭连接
         } else if ("PONG".equals(msg)) {
             // 处理心跳响应
-            log.info("Client: received heartbeat response (PONG)");
+            log.info("Client: received heartbeat response (PONG), the server is still on connection!");
         } else {
             log.warn("Unknown message type received: " + msg);
         }

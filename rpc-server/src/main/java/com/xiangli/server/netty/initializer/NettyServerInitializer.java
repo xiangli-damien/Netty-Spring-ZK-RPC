@@ -45,7 +45,7 @@ public class NettyServerInitializer extends ChannelInitializer<SocketChannel> {
             * @param allIdleTime    读写空闲时间
             * @param unit           时间单位
          */
-        pipeline.addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS));
+        pipeline.addLast(new IdleStateHandler(40, 0, 0, TimeUnit.SECONDS));
 
         pipeline.addLast(new NettyRpcServerHandler(serviceManager));
     }

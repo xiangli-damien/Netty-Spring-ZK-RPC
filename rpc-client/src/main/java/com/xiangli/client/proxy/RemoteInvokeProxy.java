@@ -49,18 +49,26 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
             if (field.isAnnotationPresent(RemoteInvoke.class)) {
                 // 设置字段的可访问性为 true，以便能够进行反射操作
                 field.setAccessible(true);
-
                 // 这里我们创建动态代理来替换原有的属性
+                // Enhancer 是 CGLIB 提供的一个字节码增强器, 可以用来为没有实现接口的类创建代理
                 Enhancer enhancer = new Enhancer();
-                // 设置需要动态代理的接口
+                // 设置需要动态代理的接口,setInterfaces() 方法的参数是一个 Class 数组，表示需要动态代理的接口
                 enhancer.setInterfaces(new Class[]{field.getType()});
                 // 设置回调处理，拦截方法调用
                 enhancer.setCallback(new MethodInterceptor() {
+                    /**
+                     * @param o 代理对象
+                     * @param method 被代理对象的方法
+                     * @param args 方法参数
+                     * @param methodProxy 代理方法
+                     * @return
+                     * @throws Throwable
+                     */
                     @Override
                     public Object intercept(Object o, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
                         log.info("Client: calling method " + method.getName() + " of " + field.getType().getName());
 
-                        // 创建RPC请求对象
+                        // 创建RPC请求对象, 封装了请求的接口名、方法名、参数、参数类型,还有请求的唯一标识（通过无参构造）
                         RpcRequest request = new RpcRequest(
                                 method.getDeclaringClass().getName(),
                                 method.getName(),
@@ -68,21 +76,23 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
                                 method.getParameterTypes()
                         );
 
-                        //
+                        // 获取调用服务类的接口名和方法名
                         String serviceName = request.getInterfaceName();
                         String methodName = request.getMethodName();
 
-                        // 细化到方法级别的幂等性校验
+                        // 客户端重试机制校验（细化到方法级别）----幂等性校验
                         if (serviceCenter.checkMethodRetry(serviceName, methodName)) {
                             log.info("Method " + methodName + " of service " + serviceName + " is idempotent, will retry if needed.");
 
-                            // 使用 GuavaRetry
+                            // 使用 GuavaRetry 进行消息发送
                             GuavaRetry guavaRetry = new GuavaRetry(rpcClient);
                             RpcResponse response = guavaRetry.sendServiceWithRetry(request);
-                            log.info("Client: received RPC response after retry {}", response);
+                            log.info("Client: received RPC response with guava retry mechanics {}", response);
                             return response != null ? response.getData() : null;
 
-                        } else {
+                        }
+                        // 如果不是幂等方法，直接发送请求
+                        else {
                             log.info("Method " + methodName + " of service " + serviceName + " is not idempotent. Sending request without retry.");
                             RpcResponse response = rpcClient.sendRequest(request);
                             log.info("Client: received RPC response " + response);
@@ -106,24 +116,4 @@ public class RemoteInvokeProxy implements BeanPostProcessor {
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         return bean;
     }
-
-//    // 发送RPC请求的方法，动态获取服务地址
-//    private RpcResponse sendRpcRequest(RpcRequest request) {
-//        String serviceName = request.getInterfaceName();  // 获取接口名
-//
-//        // 从服务中心获取服务地址
-//        InetSocketAddress serviceAddress = serviceCenter.serviceDiscovery(serviceName);
-//
-//        if (serviceAddress != null) {
-//            String host = serviceAddress.getHostName();
-//            int port = serviceAddress.getPort();
-//            log.info("Client: connecting to server " + host + ":" + port);
-//
-//            // 使用Netty客户端发送RPC请求
-//            return new NettyRpcClient(host, port).sendRequest(request);
-//        } else {
-//            log.error("No available service found for " + serviceName);
-//            return null;
-//        }
-//    }
 }

@@ -38,7 +38,6 @@ public class NettyServerStarter implements ApplicationListener<ContextRefreshedE
         for (int i = 0; i < 3; i++) {
             int port = PortUtil.findAvailablePort();  // 查找一个可用的端口
             if (!nettyRpcServer.isRunning()) {
-                log.info("Server: Starting Netty server on port " + port);
                 nettyRpcServer.start(port);  // 启动 Netty 服务器，监听指定端口
                 log.info("Server: Netty server listening on port " + port);
                 zkServiceRegister.register("com.xiangli.common.service.UserService", new InetSocketAddress("localhost", port), userService);
