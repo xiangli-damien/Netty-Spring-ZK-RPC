@@ -13,7 +13,7 @@ A lightweight RPC (Remote Procedure Call) framework built with **Netty**, **ZooK
 - [RPC Overview](#rpc-overview)
 - [Project Structure](#project-structure)
 - [Running the Project](#running-the-project)
-- [Main Implemented Features](#Main Implemented Features)
+- [Main Implemented Features](#Main-plemented-Features)
   - [Custom Message Protocol and Codec](#custom-message-protocol-and-codec)
   - [Solving TCP Sticky Packet and Packet Fragmentation](#solving-tcp-sticky-packet-and-packet-fragmentation)
   - [Serialization Algorithms](#serialization-algorithms)
@@ -26,10 +26,10 @@ A lightweight RPC (Remote Procedure Call) framework built with **Netty**, **ZooK
   - [Client Channel Multiplexing and Asynchronous Invocation](#client-channel-multiplexing-and-asynchronous-invocation)
   - [Server Fault Tolerance and Flow Control Degradation](#server-fault-tolerance-and-flow-control-degradation)
   - [Using Guava-Retry for Idempotent Services](#using-guava-retry-for-idempotent-services)
-- [Flow Chart](#Flow Chart)
+- [Flow Chart](#Flow-Chart)
 - [Environment Setup](#environment-setup)
 - [Project Testing](#project-testing)
-- [Future Improvement](#Future Improvement)
+- [Future Improvement](#Future-Improvement)
 
 
 
@@ -106,7 +106,6 @@ A typical RPC framework involves:
 ## Project Structure
 
 ```css
-/
 ├── rpc-client/
 │   ├── src/
 │   └── pom.xml
@@ -135,7 +134,7 @@ A typical RPC framework involves:
 
    - Update the `application.yml` or `application.properties` files in both **consumer** and **provider** modules to point to your ZooKeeper instance.
 
-     ```
+     ``` yaml
      # For Consumer
      rpc:
        client:
