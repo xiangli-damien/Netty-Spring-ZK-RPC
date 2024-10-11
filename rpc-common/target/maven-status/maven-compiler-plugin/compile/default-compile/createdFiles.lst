@@ -1,0 +1,14 @@
+com/xiangli/common/message/RpcRequest.class
+com/xiangli/common/serializer/myCode/MyDecoder.class
+com/xiangli/common/annotation/RemoteInvoke.class
+com/xiangli/common/service/UserService.class
+com/xiangli/common/serializer/myCode/MyEncoder.class
+com/xiangli/common/serializer/mySerializer/ObjectSerializer.class
+com/xiangli/common/pojo/User.class
+com/xiangli/common/annotation/Remote.class
+com/xiangli/common/serializer/mySerializer/JsonSerializer.class
+com/xiangli/common/message/RpcResponse.class
+com/xiangli/common/service/UserServiceImpl.class
+com/xiangli/common/message/MessageType.class
+com/xiangli/common/serializer/mySerializer/Serializer.class
+com/xiangli/common/serializer/mySerializer/ProtostuffSerializer.class
